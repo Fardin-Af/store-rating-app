@@ -2,7 +2,6 @@ const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ================= SIGNUP =================
 
 const signup = async (req, res) => {
 
@@ -45,7 +44,6 @@ const signup = async (req, res) => {
 
 };
 
-// ================= LOGIN =================
 
 const login = (req, res) => {
 
@@ -106,7 +104,6 @@ const login = (req, res) => {
 
 };
 
-// ================= CHANGE PASSWORD =================
 
 const changePassword = (req, res) => {
 
@@ -116,7 +113,6 @@ const changePassword = (req, res) => {
 
 };
 
-// ================= EXPORTS =================
 
 module.exports = {
     signup,
