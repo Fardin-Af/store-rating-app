@@ -7,6 +7,55 @@ const signup = async (req, res) => {
 
     const { name, email, address, password, role } = req.body;
 
+    if (name.length < 20 || name.length > 60) {
+    return res.status(400).json({
+        message: "Name must be between 20 and 60 characters"
+    });
+}
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailRegex.test(email)) {
+    return res.status(400).json({
+        message: "Invalid email format"
+    });
+}
+
+if (address.length > 400) {
+    return res.status(400).json({
+        message: "Address cannot exceed 400 characters"
+    });
+}
+
+const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,16}$/;
+
+if (!passwordRegex.test(password)) {
+    return res.status(400).json({
+        message:
+            "Password must be 8-16 characters and contain one uppercase letter and one special character"
+    });
+}
+
+    const checkSql =
+    "SELECT id FROM users WHERE email = ?";
+
+db.query(checkSql, [email], async (err, result) => {
+
+    if (err) {
+        return res.status(500).json({
+            message: err.message
+        });
+    }
+
+    if (result.length > 0) {
+        return res.status(400).json({
+            message: "Email already exists"
+        });
+    }
+
+
+});
     try {
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -105,10 +154,64 @@ const login = (req, res) => {
 };
 
 
-const changePassword = (req, res) => {
+const changePassword = async (req, res) => {
 
-    res.json({
-        message: "Change Password API Working"
+    const { oldPassword, newPassword } = req.body;
+
+    const userId = req.user.id;
+
+    const sql = "SELECT * FROM users WHERE id = ?";
+
+    db.query(sql, [userId], async (err, result) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: err.message
+            });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        const user = result[0];
+
+        const isMatch = await bcrypt.compare(
+            oldPassword,
+            user.password
+        );
+
+        if (!isMatch) {
+            return res.status(401).json({
+                message: "Old password is incorrect"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(
+            newPassword,
+            10
+        );
+
+        db.query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [hashedPassword, userId],
+            (err) => {
+
+                if (err) {
+                    return res.status(500).json({
+                        message: err.message
+                    });
+                }
+
+                res.status(200).json({
+                    message: "Password updated successfully"
+                });
+
+            }
+        );
+
     });
 
 };
