@@ -40,40 +40,52 @@ const addStore = (req, res) => {
 };
 const getAllStores = (req, res) => {
 
+    const userId = req.user.id;
+
     const sql = `
-    SELECT
-        s.id,
-        s.name,
-        s.email,
-        s.address,
-        ROUND(AVG(r.rating),1) AS averageRating
-    FROM stores s
-    LEFT JOIN ratings r
-    ON s.id = r.store_id
-    GROUP BY
-        s.id,
-        s.name,
-        s.email,
-        s.address
-`;
+        SELECT
+            s.id,
+            s.name,
+            s.email,
+            s.address,
+            ROUND(AVG(r.rating),1) AS averageRating,
+            (
+                SELECT rating
+                FROM ratings
+                WHERE user_id = ?
+                AND store_id = s.id
+            ) AS userRating
+        FROM stores s
+        LEFT JOIN ratings r
+        ON s.id = r.store_id
+        GROUP BY
+            s.id,
+            s.name,
+            s.email,
+            s.address
+    `;
 
-    db.query(sql, (err, result) => {
+    db.query(
+        sql,
+        [userId],
+        (err, result) => {
 
-        if (err) {
-            return res.status(500).json({
-                message: err.message
-            });
+            if (err) {
+                return res.status(500).json({
+                    message: err.message
+                });
+            }
+
+            res.status(200).json(result);
+
         }
-
-        res.status(200).json(result);
-
-    });
+    );
 
 };
 
 const searchStores = (req, res) => {
 
-    const { name } = req.query;
+    const { search } = req.query;
 
     const sql = `
         SELECT
@@ -82,12 +94,16 @@ const searchStores = (req, res) => {
             email,
             address
         FROM stores
-        WHERE name LIKE ?
+        WHERE
+            name LIKE ?
+            OR address LIKE ?
     `;
+
+    const value = `%${search}%`;
 
     db.query(
         sql,
-        [`%${name}%`],
+        [value, value],
         (err, result) => {
 
             if (err) {

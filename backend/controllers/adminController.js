@@ -60,6 +60,20 @@ const getDashboard = (req, res) => {
 
 const getAllUsers = (req, res) => {
 
+    const sortBy = req.query.sortBy || "name";
+
+    const allowedColumns = [
+        "id",
+        "name",
+        "email",
+        "address",
+        "role"
+    ];
+
+    const column = allowedColumns.includes(sortBy)
+        ? sortBy
+        : "name";
+
     const sql = `
         SELECT
             id,
@@ -68,6 +82,7 @@ const getAllUsers = (req, res) => {
             address,
             role
         FROM users
+        ORDER BY ${column}
     `;
 
     db.query(sql, (err, result) => {
@@ -90,13 +105,24 @@ const getUserById = (req, res) => {
 
     const sql = `
         SELECT
-            id,
-            name,
-            email,
-            address,
-            role
-        FROM users
-        WHERE id = ?
+            u.id,
+            u.name,
+            u.email,
+            u.address,
+            u.role,
+            ROUND(AVG(r.rating),1) AS rating
+        FROM users u
+        LEFT JOIN stores s
+        ON u.id = s.owner_id
+        LEFT JOIN ratings r
+        ON s.id = r.store_id
+        WHERE u.id = ?
+        GROUP BY
+            u.id,
+            u.name,
+            u.email,
+            u.address,
+            u.role
     `;
 
     db.query(sql, [id], (err, result) => {
@@ -121,7 +147,7 @@ const getUserById = (req, res) => {
 
 const searchUsers = (req, res) => {
 
-    const { name } = req.query;
+    const { search } = req.query;
 
     const sql = `
         SELECT
@@ -131,12 +157,18 @@ const searchUsers = (req, res) => {
             address,
             role
         FROM users
-        WHERE name LIKE ?
+        WHERE
+            name LIKE ?
+            OR email LIKE ?
+            OR address LIKE ?
+            OR role LIKE ?
     `;
+
+    const value = `%${search}%`;
 
     db.query(
         sql,
-        [`%${name}%`],
+        [value, value, value, value],
         (err, result) => {
 
             if (err) {

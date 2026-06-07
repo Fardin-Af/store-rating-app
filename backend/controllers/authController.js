@@ -36,26 +36,6 @@ if (!passwordRegex.test(password)) {
             "Password must be 8-16 characters and contain one uppercase letter and one special character"
     });
 }
-
-    const checkSql =
-    "SELECT id FROM users WHERE email = ?";
-
-db.query(checkSql, [email], async (err, result) => {
-
-    if (err) {
-        return res.status(500).json({
-            message: err.message
-        });
-    }
-
-    if (result.length > 0) {
-        return res.status(400).json({
-            message: "Email already exists"
-        });
-    }
-
-
-});
     try {
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -157,6 +137,15 @@ const login = (req, res) => {
 const changePassword = async (req, res) => {
 
     const { oldPassword, newPassword } = req.body;
+    const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,16}$/;
+
+if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({
+        message:
+            "Password must be 8-16 characters and contain one uppercase letter and one special character"
+    });
+}
 
     const userId = req.user.id;
 

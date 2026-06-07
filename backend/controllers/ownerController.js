@@ -9,7 +9,8 @@ const getOwnerDashboard = (req, res) => {
             s.id,
             s.name AS storeName,
             ROUND(AVG(r.rating),1) AS averageRating,
-            u.name AS userName,
+            u.name,
+            u.email,
             r.rating
         FROM stores s
         LEFT JOIN ratings r
@@ -18,9 +19,10 @@ const getOwnerDashboard = (req, res) => {
             ON r.user_id = u.id
         WHERE s.owner_id = ?
         GROUP BY
-            s.id,s
+            s.id,
             s.name,
             u.name,
+            u.email,
             r.rating
     `;
 
